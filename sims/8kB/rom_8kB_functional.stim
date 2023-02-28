@@ -1,0 +1,59 @@
+* Timing characterization for testing rom array in sky130 PDK
+* use typical typical corner
+.lib /software/PDKs/sky130A/libs.tech/xyce/sky130.lib.spice tt
+
+.include simulation_file_8kB.sp
+
+.option temp=27
+
+Vvdd vdd 0 1.8 
+Ven CS 0 1.8
+Vgnd gnd 0 0 
+
+* clock is set to pulse waveform: 
+* PULSE(initial_value pulse_value, start_time, rise, fall, pulse_width, period, num_pulses(infinite if 0) )
+Vclk clk 0 PULSE(0 1.8 400NS 0.1NS 0.1NS 400NS 800NS)
+
+* 12 words per row so lower address set to 0b1011 -> sel 11
+VA0 addr_0 0 0
+VA1 addr_1 0 0
+VA2 addr_2 0 0
+VA3 addr_3 0 0
+
+
+* Worst case read is the a 1 at the upper right corner of the array immediately after reading a 0
+* 170 wordlines, low address WL_254 -> 0b10101000 upper: WL_255 -> 0b10101001
+VA4 addr_4 0 PULSE(0 1.8 1000NS 0.1NS 0.1NS 800NS 1600NS)
+VA5 addr_5 0 1.8
+VA6 addr_6 0 1.8
+VA7 addr_7 0 1.8
+VA8 addr_8 0 1.8
+VA9 addr_9 0 1.8
+VA10 addr_10 0 1.8
+VA11 addr_11 0 1.8
+
+
+Xrom clk CS addr_0 addr_1 addr_2 addr_3 addr_4 addr_5 addr_6
++ addr_7 addr_8 addr_9 addr_10 addr_11 rom_out_0 rom_out_1 rom_out_2 rom_out_3 rom_out_4 rom_out_5
++ rom_out_6 rom_out_7 rom_out_8 rom_out_9 rom_out_10 rom_out_11 rom_out_12 rom_out_13
++ rom_out_14 rom_out_15 vdd gnd sram_rom_base_bank
+
+
+.tran 0.01ns 5us
+
+.MEASURE TRAN precharge_clk_delay TRIG V(clk)=0.9 RISE=4 TARG V(Xrom:precharge)=0.9 RISE=4
+.MEASURE TRAN int_clk_delay TRIG V(clk)=0.9 RISE=4 TARG V(Xrom:clk_int)=0.9 RISE=4
+
+.MEASURE TRAN precharge_skew TRIG V(Xrom:precharge)=0.9 RISE=4 TARG V(Xrom:WL_254)=0.9 FALL=2
+.MEASURE TRAN row_decode_delay TRIG V(Xrom:clk_int)=0.9 RISE=4 TARG V(Xrom:WL_254)=0.9 FALL=2
+.MEASURE TRAN wordline_buffer_delay TRIG V(Xrom:Xrom_row_decoder:wl_int254)=0.9 FALL=2 TARG V(Xrom:WL_254)=0.9 FALL=2
+
+.MEASURE TRAN read_zero_delay TRIG V(clk)=0.9 RISE=4 TARG V(rom_out_15)=0.9 FALL=3
+.MEASURE TRAN read_one_delay TRIG V(clk)=0.9 RISE=5 TARG V(rom_out_15)=0.9 RISE=3
+
+.PRINT TRAN FORMAT=RAW FILE=char_8kB_functional.dat V(clk) V(Xrom:precharge) V(Xrom:clk_int)
++ V(addr_*) V(Xrom:Xrom_row_decoder:A_int_*) V(Xrom:Xrom_row_decoder:Ab_int_*)
++ V(rom_out_15) V(Xrom:bl_240) V(Xrom:bl_b_240) V(Xrom:rom_out_prebuf_15)
++ V(Xrom:wl_254) V(Xrom:Xrom_row_decoder:wl_int254) V(Xrom:wl_255) V(Xrom:Xrom_row_decoder:wl_int255)
++ V(Xrom:word_sel_*)
++ V(Xrom:Xrom_bit_array:bl_int_0_240) V(Xrom:Xrom_bit_array:bl_int_40_240) V(Xrom:Xrom_bit_array:bl_int_100_240) V(Xrom:Xrom_bit_array:bl_int_250_240)

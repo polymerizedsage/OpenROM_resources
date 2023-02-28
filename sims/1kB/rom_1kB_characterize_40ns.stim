@@ -1,0 +1,51 @@
+* Timing characterization for testing rom array in sky130 PDK
+* use typical typical corner
+.lib /software/PDKs/sky130A/libs.tech/xyce/sky130.lib.spice tt
+
+.include simulation_file_1kB.sp
+
+.option temp=27
+
+Xrom clk CS addr_0 addr_1 addr_2 addr_3 addr_4 addr_5 addr_6
++ addr_7 addr_8 addr_9 rom_out_0 rom_out_1 rom_out_2 rom_out_3 rom_out_4 rom_out_5
++ rom_out_6 rom_out_7 vdd gnd sram_rom_base_bank
+
+
+Vvdd vdd 0 1.8 
+Ven CS 0 1.8
+Vgnd gnd 0 0 
+
+* clock is set to pulse waveform: 
+* PULSE(initial_value pulse_value, start_time, rise, fall, pulse_width, period, num_pulses(infinite if 0) )
+Vclk clk 0 PULSE(0 1.8 20NS 0.1NS 0.1NS 20NS 40NS)
+
+* Worst case read is the a 1 at the upper right corner of the array immediately after reading a 0
+VA0 addr_0 0 1.8
+VA1 addr_1 0 1.8
+VA2 addr_2 0 1.8
+VA3 addr_3 0 1.8
+VA4 addr_4 0 PULSE(0 1.8 50NS 0.1NS 0.1NS 40NS 80NS)
+VA5 addr_5 0 1.8
+VA6 addr_6 0 1.8
+VA7 addr_7 0 1.8
+VA8 addr_8 0 1.8
+VA9 addr_9 0 1.8
+
+.tran 0.001ns 200ns
+
+.MEASURE TRAN precharge_clk_delay TRIG V(clk)=0.9 RISE=4 TARG V(Xrom:precharge)=0.9 RISE=4
+.MEASURE TRAN int_clk_delay TRIG V(clk)=0.9 RISE=4 TARG V(Xrom:clk_int)=0.9 RISE=4
+
+.MEASURE TRAN precharge_skew TRIG V(Xrom:precharge)=0.9 RISE=4 TARG V(Xrom:WL_63)=0.9 FALL=2
+.MEASURE TRAN row_decode_delay TRIG V(Xrom:clk_int)=0.9 RISE=4 TARG V(Xrom:WL_63)=0.9 FALL=2
+.MEASURE TRAN wordline_buffer_delay TRIG V(Xrom:Xrom_row_decoder:wl_int63)=0.9 FALL=2 TARG V(Xrom:WL_63)=0.9 FALL=2
+
+.MEASURE TRAN read_one_delay TRIG V(clk)=0.9 RISE=4 TARG V(rom_out_0)=0.9 RISE=2
+.MEASURE TRAN read_zero_delay TRIG V(clk)=0.9 RISE=3 TARG V(rom_out_0)=0.9 FALL=2
+
+.PRINT TRAN FORMAT=RAW FILE=char_precharge_40ns.dat V(clk) V(Xrom:precharge) V(Xrom:clk_int)
++ V(Xrom:Xrom_bit_array:Xbitcell_array_precharge:gate)
++ V(addr_*) V(Xrom:Xrom_row_decoder:A_int_*) V(Xrom:Xrom_row_decoder:Ab_int_*)
++ V(rom_out_0) V(Xrom:bl_3) V(Xrom:bl_b_3) V(Xrom:rom_out_prebuf_0)
++ V(Xrom:wl_*) V(Xrom:Xrom_row_decoder:wl_int*) V(Xrom:Xrom_bit_array:Xbit_r63_c119:wl)
++ V(Xrom:Xrom_bit_array:bl_int_0_3) V(Xrom:Xrom_bit_array:bl_int_1_3) V(Xrom:Xrom_bit_array:bl_int_32_3) V(Xrom:Xrom_bit_array:bl_int_61_3)

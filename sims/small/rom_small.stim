@@ -1,0 +1,28 @@
+* stim for small testing rom array in sky130 PDK
+
+* use typical typical corner
+.lib "/home/software/PDKs/sky130A/libs.tech/ngspice/sky130.lib.spice" tt
+
+.include "sram_rom_base_bank.sp"
+
+.option temp=27
+
+Xsram_rom_base_bank clk CS addr_0 addr_1 addr_2 addr_3 addr_4 addr_5 rom_out_0 rom_out_1
++ rom_out_2 rom_out_3 rom_out_4 rom_out_5 rom_out_6 rom_out_7 vdd gnd
+
+Vvdd vdd 0 1.8 
+Ven CS 0 1.8
+Vgnd gnd 0 0 
+
+* clock is set to pulse waveform: 
+* PULSE(initial_value pulse_value, start_time, rise, fall, pulse_width, period, num_pulses(infinite if 0) )
+Vclk clk 0 PULSE(0 1.8 1NS 0.1NS 0.1NS 1NS 2NS)
+
+* Address encoding for 0b111011 -> 0x3B
+VA0 addr_0 0 1.8
+VA1 addr_1 0 1.8
+VA2 addr_2 0 0
+VA3 addr_3 0 1.8
+VA4 addr_4 0 1.8
+VA5 addr_5 0 1.8
+
