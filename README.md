@@ -5,7 +5,7 @@ Array data used for generation of each ROM is found in `array_data/`
 
 To generate new netlists for simulation:
 
-1. Clone OpenRAM from a branch that includes OpenROM. 
+1. Clone OpenRAM dev branch. (https://github.com/VLSIDA/OpenRAM/tree/dev)
 2. Setup OpenRAM as documented in the main repo.
 3. Edit `05_rom_base_bank_*_test` to use the correct path of the data file you would like to use. Currently only format supported is a single line file containing a hexadecimal string.
 5. Run respective unit test with `TECHS=sky130 KEEP=TRUE make 05_rom_base_bank_*_test`
